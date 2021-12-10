@@ -1,9 +1,9 @@
-import { Router } from "express";
-import { getInformation } from "../controller/student.controller.js";
-import { verifyOriginMiddleware } from "../middleware/cors.middleware.js";
+const { Router } = require('express');
+const { getInformation } = require('../controller/student.controller');
+const { verifyOriginMiddleware } = require('../middleware/cors.middleware');
 
 const router = Router();
 
 router.get('/information', verifyOriginMiddleware(['https://www.google.com']), getInformation);
 
-export default router;
+module.exports = router;

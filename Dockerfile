@@ -1,4 +1,4 @@
-FROM node:14.17.6-alpine3.11
+FROM node:8.9.4-alpine3.11
 
 WORKDIR /source/app
 
@@ -8,7 +8,7 @@ USER node
 
 COPY package.json .
 
-RUN npm install --production
+RUN npm install --production --verbose
 
 COPY . .
 

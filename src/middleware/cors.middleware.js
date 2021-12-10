@@ -1,13 +1,13 @@
-import cors from "cors";
-import express from "express";
-import httpStatus from "http-status";
+const cors = require('cors');
+const express = require('express');
+const httpStatus = require('http-status');
 
 /**
  * Restricción de origen en base a una lista blanca solo si es en producción
  *
  * @param {(string|string[])} whitelist
  */
-export const verifyOriginMiddleware = (whitelist) => {
+const verifyOriginMiddleware = (whitelist) => {
 
     /**
      * @param {express.Request} req
@@ -38,5 +38,7 @@ export const verifyOriginMiddleware = (whitelist) => {
 }
 
 
-
+module.exports = {
+    verifyOriginMiddleware
+}
 
