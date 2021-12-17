@@ -1,7 +1,7 @@
 {
-  "name": "elogim",
+  "name": "diverse",
   "version": "1.0.0",
-  "description": "",
+  "description": "Exponer API's a proveedores",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/app.js",
@@ -17,7 +17,9 @@
     "helmet": "^4.6.0",
     "http-status": "^1.5.0",
     "joi": "^17.5.0",
-    "mssql": "^6.2.3"
+    "jsonwebtoken": "^8.5.1",
+    "mssql": "^6.2.3",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "nodemon": "^2.0.4"

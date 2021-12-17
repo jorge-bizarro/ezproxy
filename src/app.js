@@ -1,31 +1,25 @@
+require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
-const studentRoutesV1 = require('./routes/student.routes');
-const dotenv = require('dotenv');
-
-dotenv.config();
-
+const personRoutesV1 = require('./routes/person.routes');
+const authRoutesV1 = require('./routes/auth.routes');
+const { bducciConfiguration } = require('../config/config.json');
+const { TracerMiddleware } = require('./middleware')
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
+// Configuraciones
 app.set('trust proxy', true);
-app.set('BDUCCIConfig', {
-    database: 'BDUCCI',
-    user: 'SSAppLinux',
-    password: 'killbducci4me',
-    server: '172.16.3.53',
-    port: 1433,
-    options: {
-        encrypt: false,
-        enableArithAbort: false,
-        requestTimeout: 300000,
-    }
-})
+app.set('BDUCCIConfig', bducciConfiguration);
 
+// Middlewares
 app.use(helmet());
 app.use(express.json());
+app.use(TracerMiddleware.trace);
 
-app.use('/api/v1/student', studentRoutesV1);
+// Rutas
+app.use('/api/v1/o/auth', authRoutesV1);
+app.use('/api/v1/person', personRoutesV1);
 
 app.use('/*', (req, res) => {
     res.send('Welcome to my API Server')
@@ -36,14 +30,3 @@ app.listen(port, (err) => {
 
     console.log(`Server run on port: ${port}`);
 });
-
-
-const fs = require('fs');
-
-const funCLog = console.log;
-
-console.log = function () {
-    funCLog.apply(this, arguments)
-    fs.appendFileSync('./console.log', `${new Date().toLocaleString()} -> ${Array.prototype.join.call(arguments, ' ')}\n`)
-}
-
