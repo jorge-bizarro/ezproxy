@@ -6,7 +6,8 @@ const { writeLog } = require('../../lib');
 class CorsMiddleware {
 
     /**
-     * Restricción de origen en base a una lista blanca solo si está en producción
+     * Restricción de origen en base a una lista blanca
+     * * Importante: Solo funciona en el entorno de producción
      *
      * @param {(string|string[])} whitelist
      */

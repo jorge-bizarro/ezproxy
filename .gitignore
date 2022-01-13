@@ -2,7 +2,13 @@ node_modules
 .env
 package-lock.json
 sample
-config
+config/*
+certs
+log
+
+*.pem
 *.log
 *.txt
 *.http
+
+!config/sample.json

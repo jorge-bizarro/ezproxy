@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { readFileSync } = require('fs');
 const joi = require('joi');
-const { providerELOGIM } = require('../../config/config.json');
+const { provider } = require('../../config/config.json');
 
 class AuthController {
 
@@ -18,7 +18,7 @@ class AuthController {
     static getTokenByProviderId(req, res) {
         const responseValue = {
             ok: false,
-            errorMessage: null,
+            error: null,
             data: null,
         }
 
@@ -28,29 +28,29 @@ class AuthController {
             }).validate(req.query);
 
             if (error) {
-                responseValue.errorMessage = error.details[0];
+                responseValue.error = error;
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
 
             const { providerId } = req.query;
 
-            if (providerId !== providerELOGIM.providerId) {
-                responseValue.errorMessage = 'Provider not found';
+            if (providerId !== provider.providerId) {
+                responseValue.error = 'Provider not found';
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
 
             const payload = { pid: providerId };
-            const privateKey = readFileSync(path.join(process.cwd(), 'config', 'private.pem'));
+            const privateKey = readFileSync(path.join(process.cwd(), 'certs', 'private.pem'));
             const token = jwt.sign(payload, privateKey, {
                 algorithm: 'RS256',
-                expiresIn: '10min'
+                expiresIn: '5min'
             });
 
             responseValue.data = { token };
             responseValue.ok = true;
             res.status(httpStatus.OK)
         } catch (error) {
-            responseValue.errorMessage = '' + error;
+            responseValue.error = '' + error;
             res.status(httpStatus.INTERNAL_SERVER_ERROR);
         }
 

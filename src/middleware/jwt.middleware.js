@@ -8,6 +8,7 @@ class JwtMiddleware {
 
     /**
      * Validar el token
+     * * Importante: Solo funciona en el entorno de producción
      *
      * @param {express.Request} req Petición
      * @param {express.Response} res Respuesta
@@ -17,25 +18,30 @@ class JwtMiddleware {
     static verifyToken(req, res, next) {
         const responseValue = {
             ok: false,
-            errorMessage: null,
+            error: null,
             data: null,
         }
 
-        try {
+        JWTVerify: try {
+            // Verficar el token solo en el entorno de producción
+
+            if (process.env.NODE_ENV !== 'production') break JWTVerify;
+
             if (!req.headers.authorization || req.headers.authorization.indexOf('Bearer ') === -1) {
-                responseValue.errorMessage = 'Missing Authorization Header';
+                responseValue.error = 'Missing Authorization Header';
                 return res.status(httpStatus.UNAUTHORIZED).send(responseValue);
             }
 
             const token = req.headers.authorization.split(' ')[1];
-            const publicKey = readFileSync(path.join(process.cwd(), 'config', 'public.pem'));
+
+            const publicKey = readFileSync(path.join(process.cwd(), 'certs', 'public.pem'));
 
             const payload = jwt.verify(token, publicKey, {
                 algorithms: ['RS256']
             });
 
         } catch (error) {
-            responseValue.errorMessage = '' + error;
+            responseValue.error = '' + error;
             return res.status(httpStatus.INTERNAL_SERVER_ERROR).send(responseValue);
         }
 

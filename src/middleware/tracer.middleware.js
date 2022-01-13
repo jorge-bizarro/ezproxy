@@ -19,7 +19,7 @@ class TracerMiddleware {
         const ipOrigin = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
         try {
-            const RequestContentJson = {
+            const requestContentJson = {
                 idTrace,
                 method,
                 originalUrl,
@@ -32,7 +32,7 @@ class TracerMiddleware {
                 query: JSON.stringify(query),
             }
 
-            writeLog(`TRACE : Petición ${JSON.stringify(RequestContentJson, null, '\t')}`, null, 'info');
+            writeLog(`TRACE : Petición ${JSON.stringify(requestContentJson, null, '\t')}`, null, 'info');
 
             let chunks = [];
 
@@ -64,8 +64,6 @@ class TracerMiddleware {
 
         next();
     }
-
-
 }
 
 module.exports = TracerMiddleware;

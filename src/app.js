@@ -3,14 +3,14 @@ const express = require('express');
 const helmet = require('helmet');
 const personRoutesV1 = require('./routes/person.routes');
 const authRoutesV1 = require('./routes/auth.routes');
-const { bducciConfiguration } = require('../config/config.json');
+const { database } = require('../config/config.json');
 const { TracerMiddleware } = require('./middleware')
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Configuraciones
 app.set('trust proxy', true);
-app.set('BDUCCIConfig', bducciConfiguration);
+app.set('dbConfig', database);
 
 // Middlewares
 app.use(helmet());

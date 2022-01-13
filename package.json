@@ -1,7 +1,7 @@
 {
-  "name": "diverse",
+  "name": "ezproxy",
   "version": "1.0.0",
-  "description": "Exponer API's a proveedores",
+  "description": "Exponer API's al proveedor de EZProxy",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/app.js",
