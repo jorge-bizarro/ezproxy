@@ -1,7 +1,8 @@
 const cors = require('cors');
 const express = require('express');
 const httpStatus = require('http-status');
-const { writeLog } = require('../../lib');
+const Logger = require('../../lib/logger');
+const { NODE_ENV } = require('../../config/config');
 
 class CorsMiddleware {
 
@@ -26,10 +27,9 @@ class CorsMiddleware {
                     const ipOrigin = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
                     const urlOrigin = req.headers['origin'];
 
-                    if (process.env.NODE_ENV === 'production' && !whiteList.includes(origin)) {
-                        writeLog(`CORS : Recurso denegado para el origen: ${urlOrigin} | IP: ${ipOrigin}`, null, 'info');
-
-                        res.status(httpStatus.FORBIDDEN).send('Recurso no disponible')
+                    if (NODE_ENV === 'production' && !whiteList.includes(origin)) {
+                        Logger.writeLog('CorsMiddleware.verifyOrigin', `Recurso denegado para el origen: ${urlOrigin} | IP: ${ipOrigin}`, Logger.Severity.Info);
+                        res.status(httpStatus.FORBIDDEN).send({ ok: false, error: 'Resource denied' });
                     } else {
                         cors()(req, res, next);
                     }

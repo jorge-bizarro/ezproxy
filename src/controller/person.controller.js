@@ -2,8 +2,7 @@ const httpStatus = require('http-status');
 const express = require('express');
 const joi = require('joi');
 const mssql = require('mssql');
-const { domain_company } = require('../../config/config.json')
-const { writeLogCatchException } = require('../../lib/logger');
+const { domainCompany } = require('../../config/config')
 
 const USER_CATEGORY = {
     EMPLOYEE: 'EMPLEADO',
@@ -22,11 +21,11 @@ class PersonController {
     static async getInformation(req, res) {
         const responseValue = {
             ok: false,
-            error: null,
             data: null,
+            error: null,
         }
-
-        let pool = null;
+        const { dbPool } = req.app.locals;
+        const { email } = req.query;
 
         try {
             const { error } = joi.object({
@@ -38,10 +37,9 @@ class PersonController {
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
 
-            const { email } = req.query;
             const [usernameEmail, domainEmail] = String(email).split('@');
 
-            if (domainEmail !== domain_company) {
+            if (domainEmail !== domainCompany) {
                 responseValue.error = 'Please enter a valid email, domain is invalid';
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
@@ -53,13 +51,12 @@ class PersonController {
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
 
-            pool = await new mssql.ConnectionPool(req.app.get('dbConfig')).connect();
-            const requestDB = new mssql.Request(pool);
+            const requestDB = dbPool.request();
             let personInformation = {};
 
             if (userCategory === USER_CATEGORY.EMPLOYEE) {
                 requestDB.input('p_usernameEmail', mssql.VarChar, usernameEmail);
-                const responseDB = await requestDB.execute('EZPROXY.sp_obtenerInformacionEmpleado');
+                const responseDB = await requestDB.execute('EZP.sp_obtenerInformacionEmpleado');
                 const dataResponseDB = responseDB.recordset;
 
                 if (!dataResponseDB.length)
@@ -75,7 +72,7 @@ class PersonController {
 
                 requestDB.input('p_usernameEmail', mssql.VarChar, usernameStudent);
                 requestDB.output('p_resultOn', mssql.TinyInt)
-                const responseDB = await requestDB.execute('EZPROXY.sp_obtenerInformacionEstudiante');
+                const responseDB = await requestDB.execute('EZP.sp_obtenerInformacionEstudiante');
                 const { p_resultOn } = responseDB.output;
                 const dataResponseDB = responseDB.recordsets[+p_resultOn];
 
@@ -97,8 +94,6 @@ class PersonController {
             responseValue.error = '' + error;
             res.status(httpStatus.INTERNAL_SERVER_ERROR);
         }
-
-        if (pool && pool.connected) await pool.close().catch(writeLogCatchException);
 
         res.send(responseValue);
     }

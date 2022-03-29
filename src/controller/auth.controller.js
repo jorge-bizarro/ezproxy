@@ -4,7 +4,8 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { readFileSync } = require('fs');
 const joi = require('joi');
-const { provider } = require('../../config/config.json');
+const { elogimProviderId } = require('../../config/config');
+const privateKey = readFileSync(path.join(process.cwd(), 'certs', 'private.pem'))
 
 class AuthController {
 
@@ -18,8 +19,8 @@ class AuthController {
     static getTokenByProviderId(req, res) {
         const responseValue = {
             ok: false,
-            error: null,
             data: null,
+            error: null,
         }
 
         try {
@@ -34,19 +35,18 @@ class AuthController {
 
             const { providerId } = req.query;
 
-            if (providerId !== provider.providerId) {
+            if (providerId !== elogimProviderId) {
                 responseValue.error = 'Provider not found';
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
 
             const payload = { pid: providerId };
-            const privateKey = readFileSync(path.join(process.cwd(), 'certs', 'private.pem'));
             const token = jwt.sign(payload, privateKey, {
                 algorithm: 'RS256',
-                expiresIn: '5min'
+                expiresIn: '10min'
             });
 
-            responseValue.data = { token };
+            responseValue.data = token;
             responseValue.ok = true;
             res.status(httpStatus.OK)
         } catch (error) {

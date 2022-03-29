@@ -3,6 +3,9 @@ const express = require('express');
 const httpStatus = require('http-status');
 const { readFileSync } = require('fs');
 const path = require('path');
+const { NODE_ENV } = require('../../config/config');
+const Logger = require('../../lib/logger');
+const publicKey = readFileSync(path.join(process.cwd(), 'certs', 'public.pem'));
 
 class JwtMiddleware {
 
@@ -15,38 +18,40 @@ class JwtMiddleware {
      * @param {express.NextFunction} next Función siguiente
      *
      */
-    static verifyToken(req, res, next) {
-        const responseValue = {
-            ok: false,
-            error: null,
-            data: null,
+    static verifyAuthorization(req, res, next) {
+
+        if (NODE_ENV !== 'production') {
+            next()
+            return
         }
 
-        JWTVerify: try {
-            // Verficar el token solo en el entorno de producción
+        try {
+            const { authorization } = req.headers
 
-            if (process.env.NODE_ENV !== 'production') break JWTVerify;
-
-            if (!req.headers.authorization || req.headers.authorization.indexOf('Bearer ') === -1) {
-                responseValue.error = 'Missing Authorization Header';
-                return res.status(httpStatus.UNAUTHORIZED).send(responseValue);
+            if (!authorization || !authorization.startsWith('Bearer ')) {
+                return res.status(httpStatus.UNAUTHORIZED).send({ ok: false, error: 'Missing Authorization Header' });
             }
 
-            const token = req.headers.authorization.split(' ')[1];
-
-            const publicKey = readFileSync(path.join(process.cwd(), 'certs', 'public.pem'));
+            const token = authorization.split(' ')[1];
 
             const payload = jwt.verify(token, publicKey, {
                 algorithms: ['RS256']
             });
 
+            req.headers.tokenPayload = payload;
+
+            next()
+
         } catch (error) {
-            responseValue.error = '' + error;
-            return res.status(httpStatus.INTERNAL_SERVER_ERROR).send(responseValue);
+            if (error instanceof jwt.JsonWebTokenError || error instanceof jwt.TokenExpiredError) {
+                res.status(httpStatus.UNAUTHORIZED)
+            } else {
+                res.status(httpStatus.INTERNAL_SERVER_ERROR)
+            }
+
+            res.send({ ok: false, error: '' + error });
+            Logger.writeLog('JwtMiddleware.verifyAuthorization', error, Logger.Severity.Error);
         }
-
-        next();
-
     }
 
 }
