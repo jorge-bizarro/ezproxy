@@ -1,10 +1,12 @@
+// @ts-check
+
 const httpStatus = require('http-status');
 const express = require('express');
 const joi = require('joi');
 const mssql = require('mssql');
-const { domain_company } = require('../../config/config.json')
-const { writeLogCatchException } = require('../../lib/logger');
+const Logger = require('../utils/logger');
 
+const MAIL_DOMAIN = 'continental.edu.pe';
 const USER_CATEGORY = {
     EMPLOYEE: 'EMPLEADO',
     STUDENT: 'ESTUDIANTE'
@@ -26,44 +28,38 @@ class PersonController {
             data: null,
         }
 
-        let pool = null;
-
         try {
-            const { error } = joi.object({
+            const { error: joiError } = joi.object({
                 email: joi.string().email().required(),
             }).validate(req.query)
 
-            if (error) {
-                responseValue.error = error;
+            if (joiError) {
+                responseValue.error = joiError
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
 
             const { email } = req.query;
+            const { dbPool } = req.app.locals;
+            const requestDB = dbPool.request();
             const [usernameEmail, domainEmail] = String(email).split('@');
 
-            if (domainEmail !== domain_company) {
+            if (domainEmail !== MAIL_DOMAIN) {
                 responseValue.error = 'Please enter a valid email, domain is invalid';
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
 
             const userCategory = getCategoryOfUserByUsernameEmail(usernameEmail);
 
-            if (!userCategory) {
-                responseValue.error = 'Please enter a valid email, user not recognize';
-                return res.status(httpStatus.BAD_REQUEST).send(responseValue);
-            }
-
-            pool = await new mssql.ConnectionPool(req.app.get('dbConfig')).connect();
-            const requestDB = new mssql.Request(pool);
             let personInformation = {};
 
             if (userCategory === USER_CATEGORY.EMPLOYEE) {
                 requestDB.input('p_usernameEmail', mssql.VarChar, usernameEmail);
-                const responseDB = await requestDB.execute('EZPROXY.sp_obtenerInformacionEmpleado');
+                const responseDB = await requestDB.execute('EZP.sp_obtenerInformacionEmpleado');
                 const dataResponseDB = responseDB.recordset;
 
-                if (!dataResponseDB.length)
+                if (!dataResponseDB.length) {
                     throw new Error('Information of employee not found');
+                }
 
                 personInformation = dataResponseDB[0]
             }
@@ -75,32 +71,31 @@ class PersonController {
 
                 requestDB.input('p_usernameEmail', mssql.VarChar, usernameStudent);
                 requestDB.output('p_resultOn', mssql.TinyInt)
-                const responseDB = await requestDB.execute('EZPROXY.sp_obtenerInformacionEstudiante');
+                const responseDB = await requestDB.execute('EZP.sp_obtenerInformacionEstudiante');
                 const { p_resultOn } = responseDB.output;
                 const dataResponseDB = responseDB.recordsets[+p_resultOn];
 
-                if (!dataResponseDB.length)
+                if (!dataResponseDB.length) {
                     throw new Error('Information of student not found');
+                }
 
                 personInformation = dataResponseDB[0];
             }
 
             Object.keys(personInformation).forEach(key => {
-                if (typeof personInformation[key] === 'string')
-                    personInformation[key] = String(personInformation[key]).trim();
+                if (typeof personInformation[key] === 'string') {
+                    personInformation[key] = String(personInformation[key]).trim()
+                }
             })
 
             responseValue.data = personInformation;
             responseValue.ok = true;
-            res.status(httpStatus.OK);
+            res.status(httpStatus.OK).send(responseValue)
         } catch (error) {
             responseValue.error = '' + error;
-            res.status(httpStatus.INTERNAL_SERVER_ERROR);
+            Logger.writeLog('PersonController.getInformation', error, Logger.Severity.Error);
+            res.status(httpStatus.INTERNAL_SERVER_ERROR).send(responseValue)
         }
-
-        if (pool && pool.connected) await pool.close().catch(writeLogCatchException);
-
-        res.send(responseValue);
     }
 
 }

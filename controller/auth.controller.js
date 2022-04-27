@@ -1,10 +1,13 @@
+// @ts-check
+
 const express = require('express');
 const httpStatus = require('http-status');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const { readFileSync } = require('fs');
 const joi = require('joi');
-const { provider } = require('../../config/config.json');
+const { readFileSync } = require('fs');
+const privateKey = readFileSync(path.join(process.cwd(), 'certs', 'private.pem'));
+const { ELOGIM_PROVIDER_ID } = require('../config/config');
 
 class AuthController {
 
@@ -23,38 +26,35 @@ class AuthController {
         }
 
         try {
-            const { error } = joi.object({
+            const { error: joiError } = joi.object({
                 providerId: joi.string().required(),
             }).validate(req.query);
 
-            if (error) {
-                responseValue.error = error;
+            if (joiError) {
+                responseValue.error = joiError;
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
 
             const { providerId } = req.query;
 
-            if (providerId !== provider.providerId) {
+            if (providerId !== ELOGIM_PROVIDER_ID) {
                 responseValue.error = 'Provider not found';
                 return res.status(httpStatus.BAD_REQUEST).send(responseValue);
             }
 
             const payload = { pid: providerId };
-            const privateKey = readFileSync(path.join(process.cwd(), 'certs', 'private.pem'));
             const token = jwt.sign(payload, privateKey, {
                 algorithm: 'RS256',
                 expiresIn: '5min'
             });
 
-            responseValue.data = { token };
+            responseValue.data = token;
             responseValue.ok = true;
-            res.status(httpStatus.OK)
+            res.status(httpStatus.OK).send(responseValue)
         } catch (error) {
             responseValue.error = '' + error;
-            res.status(httpStatus.INTERNAL_SERVER_ERROR);
+            res.status(httpStatus.INTERNAL_SERVER_ERROR).send(responseValue)
         }
-
-        res.send(responseValue);
     }
 }
 
