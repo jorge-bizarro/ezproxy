@@ -3,11 +3,8 @@
 const express = require('express');
 const httpStatus = require('http-status');
 const jwt = require('jsonwebtoken');
-const path = require('path');
 const joi = require('joi');
-const { readFileSync } = require('fs');
-const privateKey = readFileSync(path.join(process.cwd(), 'certs', 'private.pem'));
-const { ELOGIM_PROVIDER_ID } = require('../config/config');
+const { ELOGIM_PROVIDER_ID, SECRET_KEY } = require('../config/config');
 
 class AuthController {
 
@@ -43,8 +40,7 @@ class AuthController {
             }
 
             const payload = { pid: providerId };
-            const token = jwt.sign(payload, privateKey, {
-                algorithm: 'RS256',
+            const token = jwt.sign(payload, SECRET_KEY, {
                 expiresIn: '5min'
             });
 

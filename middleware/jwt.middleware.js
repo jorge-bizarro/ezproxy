@@ -4,9 +4,7 @@ const jwt = require('jsonwebtoken');
 const express = require('express');
 const httpStatus = require('http-status');
 const Logger = require('../utils/logger');
-const { readFileSync } = require('fs');
-const path = require('path');
-const publicKey = readFileSync(path.join(process.cwd(), 'certs', 'public.pem'));
+const { SECRET_KEY } = require('../config/config')
 
 class JwtMiddleware {
 
@@ -32,11 +30,8 @@ class JwtMiddleware {
                 return res.status(httpStatus.UNAUTHORIZED).send(responseValue);
             }
 
-            const token = authorization.split(' ')[1];
-
-            const payload = jwt.verify(token, publicKey, {
-                algorithms: ['RS256']
-            });
+            const token = authorization.replace('Bearer ', '');
+            const payload = jwt.verify(token, SECRET_KEY);
 
             req['tokenPayload'] = payload;
         } catch (error) {
