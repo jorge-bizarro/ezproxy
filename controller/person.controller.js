@@ -65,8 +65,8 @@ class PersonController {
             }
 
             if (userCategory === USER_CATEGORY.STUDENT) {
-                const usernameStudent = usernameEmail.includes('i')
-                    ? usernameEmail.split('i')[1]
+                const usernameStudent = /[i|u]\d/.test(usernameEmail)
+                    ? usernameEmail.replace(/[i|u]/, '')
                     : usernameEmail;
 
                 requestDB.input('p_usernameEmail', mssql.VarChar, usernameStudent);
